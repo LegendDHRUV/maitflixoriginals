@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maitflix | Dhruv Gupta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root { --netflix-red: #e50914; --bg-black: #141414; }
+        * { box-sizing: border-box; }
+        
+        body { 
+            background-color: var(--bg-black); 
+            color: #fff; 
+            font-family: 'Montserrat', sans-serif; 
+            margin: 0; 
+            overflow-x: hidden; 
+            -webkit-font-smoothing: antialiased;
+            scroll-behavior: smooth;
+        }
+
+        /* --- DISCLAIMER POPUP --- */
+        #disclaimer-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 5000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .disclaimer-content {
+            background: #181818; border-radius: 8px; padding: 40px;
+            max-width: 500px; width: 90%; text-align: center;
+            border-top: 5px solid var(--netflix-red);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .disclaimer-content h2 { font-family: 'Bebas Neue'; color: var(--netflix-red); font-size: 2.5rem; margin-bottom: 15px; }
+        .disclaimer-content p { line-height: 1.6; color: #ccc; margin-bottom: 25px; font-size: 0.95rem; }
+        .disclaimer-btn { 
+            background: var(--netflix-red); color: #fff; border: none; 
+            padding: 12px 30px; font-weight: bold; border-radius: 4px; 
+            cursor: pointer; font-size: 1rem; text-transform: uppercase;
+        }
+
+        /* --- NAVIGATION --- */
+        nav { 
+            position: fixed; top: 0; width: 100%; padding: 0 4%; height: 70px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); 
+            z-index: 1000; transition: background 0.4s; 
+        }
+        .nav-left, .nav-right { display: flex; align-items: center; gap: 20px; }
+        .logo-box { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+        .logo { color: var(--netflix-red); font-family: 'Bebas Neue', cursive; font-size: 2.2rem; line-height: 1; }
+        .sub-logo { font-size: 0.5rem; letter-spacing: 3px; font-weight: 700; text-transform: uppercase; color: #fff; }
+
+        .nav-links { display: flex; gap: 15px; list-style: none; font-size: 0.85rem; padding: 0; margin-left: 20px; color: #e5e5e5; }
+        .nav-links li { cursor: pointer; transition: 0.3s; }
+
+        /* --- HERO --- */
+        .hero { 
+            height: 85vh; width: 100%; position: relative; display: flex; align-items: center; padding: 0 4%; 
+            background-size: cover; background-position: center; 
+            transition: background-image 1.2s ease-in-out; 
+        }
+        .hero-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to right, rgba(0,0,0,0.9) 10%, transparent 70%), linear-gradient(to top, var(--bg-black) 5%, transparent 30%); }
+        .hero-content { z-index: 10; max-width: 650px; transition: opacity 0.8s ease; }
+        .hero-logo-img { max-width: 400px; max-height: 180px; margin-bottom: 20px; object-fit: contain; display: none; }
+        .hero-title-text { font-family: 'Bebas Neue'; font-size: 5rem; margin: 0; line-height: 1; display: block; }
+        .hero-desc { font-size: 1.1rem; line-height: 1.4; margin: 20px 0; text-shadow: 2px 2px 4px #000; }
+
+        .btn { padding: 12px 28px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; font-size: 1rem; display: inline-flex; align-items: center; gap: 10px; transition: 0.2s; }
+        .btn-play { background: #fff; color: #000; }
+        .btn-trailer { background: rgba(109, 109, 110, 0.8); color: #fff; margin-left: 10px; }
+
+        /* --- ROWS --- */
+        .row { padding: 25px 0 0 4%; }
+        .row-title { font-size: 1.4rem; margin-bottom: 15px; font-weight: 700; color: #fff; }
+        .slider { display: flex; overflow-x: auto; gap: 10px; padding: 10px 0 30px 0; scrollbar-width: none; }
+        .slider::-webkit-scrollbar { display: none; }
+        .card { min-width: 260px; height: 145px; position: relative; border-radius: 4px; cursor: pointer; transition: 0.4s; flex-shrink: 0; overflow: hidden;}
+        .card img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
+        .card:hover { transform: scale(1.1); z-index: 100; }
+        
+        .card-name { 
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            padding: 15px 10px 5px 10px; 
+            font-family: 'Bebas Neue', sans-serif; 
+            font-size: 1.1rem; 
+            letter-spacing: 0.8px;
+            color: #fff; 
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            opacity: 1; 
+            transition: 0.3s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* --- MODAL --- */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 3000; display: none; justify-content: center; align-items: center; }
+        .modal-inner { width: 90%; max-width: 900px; background: #181818; border-radius: 12px; overflow: hidden; position: relative; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
+        .video-box { width: 100%; aspect-ratio: 16/9; background: #000; }
+        .video-box iframe { width: 100%; height: 100%; border: none; }
+        .modal-body { padding: 30px; }
+        .modal-info-row { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .match-pct { color: #46d369; font-weight: 700; font-size: 1.1rem; }
+        .cast-section { margin-top: 20px; font-size: 0.9rem; color: #a3a3a3; line-height: 1.6; }
+        .cast-label { color: #fff; font-weight: 600; margin-right: 5px; }
+
+        .search-container { position: relative; display: flex; align-items: center; border: 1px solid #fff; background: rgba(0,0,0,0.6); padding: 5px 10px; }
+        #searchInput { background: transparent; border: none; color: white; outline: none; width: 150px; font-size: 0.85rem; }
+        .suggestions { position: absolute; top: 40px; left: 0; width: 100%; background: #181818; border: 1px solid #333; display: none; flex-direction: column; z-index: 2000; }
+        .suggestion-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #222; font-size: 0.8rem; }
+        .music-btn { cursor: pointer; font-size: 1.2rem; margin-right: 15px; color: #fff; }
+        footer { background: #111; padding: 50px 4%; border-top: 4px solid var(--netflix-red); text-align: center; color: #808080; margin-top: 50px; }
+    </style>
+</head>
+<body>
+
+    <!-- DISCLAIMER POPUP -->
+    <div id="disclaimer-modal">
+        <div class="disclaimer-content">
+            <h2>MAITFLIX DISCLAIMER</h2>
+            <p>
+                Welcome to <strong>Maitflix</strong>. Please note that this platform is a cinematic portfolio project designed specifically to display 
+                <strong>trailers, teasers, and descriptions</strong> of movies and TV series. We do not host or stream full-length copyrighted content.
+            </p>
+            <p style="font-size: 0.8rem; color: #888;">Developed & Curated by: <br><strong>Dhruv Gupta</strong></p>
+            <button class="disclaimer-btn" onclick="acceptDisclaimer()">Enter Maitflix</button>
+        </div>
+    </div>
+
+    <audio id="bg-music" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg"></audio>
+    <audio id="tudum"><source src="https://www.myinstants.com/media/sounds/netflix-tudum.mp3" type="audio/mpeg"></audio>
+
+    <nav id="nav">
+        <div class="nav-left">
+            <div class="logo-box" onclick="location.reload()">
+                <div class="logo">MAITFLIX</div>
+                <div class="sub-logo">Dhruv Gupta</div>
+            </div>
+            <ul class="nav-links">
+                <li onclick="location.reload()" style="cursor:pointer;">Home</li>
+                <li style="cursor:pointer;">Series</li>
+                <li style="cursor:pointer;">Movies</li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <div class="search-container">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search..." autocomplete="off">
+                <div class="suggestions" id="suggestions"></div>
+            </div>
+            <i id="music-icon" class="fas fa-volume-mute music-btn" onclick="toggleMusic(event)"></i>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png" style="width:32px; border-radius:4px; cursor:pointer;">
+        </div>
+    </nav>
+
+    <header class="hero" id="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content" id="hero-content">
+            <img id="h-logo" class="hero-logo-img" src="" alt="">
+            <h1 id="h-title" class="hero-title-text"></h1>
+            <p id="h-desc" class="hero-desc"></p>
+            <div>
+                <button class="btn btn-play"><i class="fas fa-play"></i> Play</button>
+                <button class="btn btn-trailer" onclick="openModal()"><i class="fas fa-video"></i> Watch Trailer</button>
+            </div>
+        </div>
+    </header>
+
+    <div id="genre-rows"></div>
+
+    <footer>
+        <div style="color: #fff; font-family: 'Bebas Neue'; font-size: 2.2rem; margin-bottom: 10px;">MAITFLIX DEVELOPER</div>
+        <div style="font-size: 0.95rem; line-height: 1.8;">
+            Developed by: <span style="color:#fff; font-weight:700;">Dhruv Gupta</span><br>
+            Email: <span style="color:#fff; font-weight:700;">dhruvharshgupta@gmail.com</span> | Contact: <span style="color:#fff; font-weight:700;">+91 8882355904</span><br>
+            College: <span style="color:#fff; font-weight:700;">Maharaja Agrasen Institute of Technology</span>
+        </div>
+    </footer>
+
+    <div class="modal" id="modal" onclick="closeModal()">
+        <div class="modal-inner" onclick="event.stopPropagation()">
+            <div class="video-box" id="video-container"></div>
+            <div class="modal-body">
+                <div class="modal-info-row">
+                    <span id="m-rating" class="match-pct"></span>
+                    <span id="m-year" style="color:#fff;"></span>
+                    <span style="border: 1px solid #555; padding: 2px 6px; font-size: 0.7rem;">HD</span>
+                </div>
+                <h2 id="m-title" style="font-family:'Bebas Neue'; color:var(--netflix-red); font-size:2.8rem; margin:0 0 10px 0;"></h2>
+                <p id="m-plot" style="line-height:1.6; color:#ddd; font-size:1rem; margin-bottom: 20px;"></p>
+                <div class="cast-section" id="m-cast"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = '49abc2b93cf5751622b46aee5e73fb80';
+        const IMG_URL = 'https://image.tmdb.org/t/p/original';
+        let currentItem = {}; 
+        let featuredList = [];
+        let carouselIndex = 0;
+        let carouselInterval;
+        let audioInitialized = false;
+        let shownIds = new Set(); 
+
+        function acceptDisclaimer() {
+            document.getElementById('disclaimer-modal').style.display = 'none';
+            initAudio();
+        }
+
+        function initAudio() {
+            if (!audioInitialized) {
+                document.getElementById('tudum').play().catch(() => {});
+                audioInitialized = true;
+                setTimeout(() => {
+                    const bg = document.getElementById('bg-music');
+                    bg.volume = 0.2;
+                    bg.play().catch(() => {});
+                    document.getElementById('music-icon').classList.replace('fa-volume-mute', 'fa-volume-up');
+                }, 1800);
+            }
+        }
+
+        function toggleMusic(e) {
+            e.stopPropagation();
+            const bg = document.getElementById('bg-music');
+            const icon = document.getElementById('music-icon');
+            if (bg.paused) { bg.play(); icon.classList.replace('fa-volume-mute', 'fa-volume-up'); }
+            else { bg.pause(); icon.classList.replace('fa-volume-up', 'fa-volume-mute'); }
+        }
+
+        const searchInput = document.getElementById('searchInput');
+        const suggestionsBox = document.getElementById('suggestions');
+
+        searchInput.addEventListener('input', async (e) => {
+            const query = e.target.value;
+            if (query.length < 2) { suggestionsBox.style.display = 'none'; return; }
+            const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${API_KEY}&query=${query}`);
+            const data = await res.json();
+            suggestionsBox.innerHTML = '';
+            data.results.slice(0, 5).forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.innerHTML = `<span>${item.title || item.name}</span>`;
+                div.onclick = () => { 
+                    clearInterval(carouselInterval);
+                    updateHero(item.id, item.media_type || 'movie');
+                    window.scrollTo({ top: 0, behavior: 'smooth' }); // Added auto-scroll for search
+                    suggestionsBox.style.display = 'none';
+                    searchInput.value = '';
+                };
+                suggestionsBox.appendChild(div);
+            });
+            suggestionsBox.style.display = 'flex';
+        });
+
+        async function updateHero(id, type = 'movie') {
+            const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${API_KEY}&append_to_response=images,videos,credits&include_image_language=en,null`);
+            const data = await res.json();
+            currentItem = { ...data, media_type: type };
+
+            const hero = document.getElementById('hero');
+            const content = document.getElementById('hero-content');
+            content.style.opacity = '0';
+            
+            setTimeout(() => {
+                hero.style.backgroundImage = `url(${IMG_URL + (data.backdrop_path || data.poster_path)})`;
+                const logos = data.images.logos;
+                const logoEl = document.getElementById('h-logo');
+                const titleEl = document.getElementById('h-title');
+                const englishLogo = logos.find(l => l.iso_639_1 === 'en');
+
+                if (englishLogo) {
+                    logoEl.src = IMG_URL + englishLogo.file_path;
+                    logoEl.style.display = 'block';
+                    titleEl.style.display = 'none';
+                } else {
+                    logoEl.style.display = 'none';
+                    titleEl.innerText = data.title || data.name;
+                    titleEl.style.display = 'block';
+                }
+                document.getElementById('h-desc').innerText = (data.overview || "").slice(0, 180) + "...";
+                content.style.opacity = '1';
+            }, 600);
+        }
+
+        async function init() {
+            const today = new Date().toISOString().split('T')[0];
+
+            const categories = [
+                { name: "Trending Now", url: `https://api.themoviedb.org/3/trending/all/week?api_key=${API_KEY}` },
+                { 
+                    name: "Upcoming Hollywood Blockbusters", 
+                    url: `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&with_original_language=en&primary_release_date.gte=${today}&sort_by=popularity.desc`, 
+                    type: 'movie' 
+                },
+                { 
+                    name: "Future Bollywood Hits", 
+                    url: `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&with_original_language=hi&primary_release_date.gte=${today}&sort_by=popularity.desc`, 
+                    type: 'movie' 
+                },
+                { name: "Binge-Worthy Series", url: `https://api.themoviedb.org/3/tv/popular?api_key=${API_KEY}`, type: 'tv' },
+                { name: "Comedy Central", url: `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&with_genres=35`, type: 'movie' },
+                { name: "Horror Night", url: `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&with_genres=27`, type: 'movie' }
+            ];
+
+            const container = document.getElementById('genre-rows');
+            
+            for (let i = 0; i < categories.length; i++) {
+                const cat = categories[i];
+                const res = await fetch(cat.url);
+                const data = await res.json();
+                
+                if (i === 0) featuredList = data.results.slice(0, 10);
+
+                const row = document.createElement('div');
+                row.className = 'row';
+                row.innerHTML = `<div class="row-title">${cat.name}</div><div class="slider"></div>`;
+                const slider = row.querySelector('.slider');
+
+                data.results.forEach((item) => {
+                    if (item.backdrop_path && !shownIds.has(item.id)) {
+                        shownIds.add(item.id);
+                        const card = document.createElement('div');
+                        card.className = 'card';
+                        card.innerHTML = `
+                            <img src="${IMG_URL + item.backdrop_path}">
+                            <div class="card-name">${item.title || item.name}</div>
+                        `;
+                        card.onclick = () => { 
+                            clearInterval(carouselInterval); 
+                            updateHero(item.id, cat.type || item.media_type || 'movie'); 
+                            window.scrollTo({ top: 0, behavior: 'smooth' }); // Take user to top
+                        };
+                        slider.appendChild(card);
+                    }
+                });
+                if(slider.children.length > 0) container.appendChild(row);
+            }
+            updateHero(featuredList[0].id, featuredList[0].media_type || 'movie');
+            startCarousel();
+        }
+
+        function startCarousel() {
+            carouselInterval = setInterval(() => {
+                carouselIndex = (carouselIndex + 1) % featuredList.length;
+                const nextItem = featuredList[carouselIndex];
+                updateHero(nextItem.id, nextItem.media_type || 'movie');
+            }, 7000);
+        }
+
+        async function openModal() {
+            document.getElementById('modal').style.display = 'flex';
+            const res = await fetch(`https://api.themoviedb.org/3/${currentItem.media_type}/${currentItem.id}/videos?api_key=${API_KEY}`);
+            const data = await res.json();
+            const video = data.results.find(v => v.type === 'Trailer' || v.type === 'Teaser');
+            const vBox = document.getElementById('video-container');
+            
+            document.getElementById('bg-music').pause();
+            
+            if (video) vBox.innerHTML = `<iframe src="https://www.youtube.com/embed/${video.key}?autoplay=1" allow="autoplay; fullscreen"></iframe>`;
+            else vBox.innerHTML = '<div style="color:white; padding:50px; text-align:center;">Trailer not found.</div>';
+            
+            document.getElementById('m-title').innerText = currentItem.title || currentItem.name;
+            document.getElementById('m-plot').innerText = currentItem.overview;
+            document.getElementById('m-rating').innerText = Math.round(currentItem.vote_average * 10) + "% Match";
+            document.getElementById('m-year').innerText = (currentItem.release_date || currentItem.first_air_date || "").slice(0, 4);
+            
+            if (currentItem.credits && currentItem.credits.cast) {
+                const castNames = currentItem.credits.cast.slice(0, 5).map(c => c.name).join(', ');
+                document.getElementById('m-cast').innerHTML = `<span class="cast-label">Cast:</span> ${castNames}`;
+            }
+        }
+
+        function closeModal() { 
+            document.getElementById('modal').style.display = 'none'; document.getElementById('video-container').innerHTML = '';
+            if(document.getElementById('music-icon').classList.contains('fa-volume-up')) {
+                document.getElementById('bg-music').play();
+            }
+        }
+        
+        window.onscroll = () => { document.getElementById('nav').style.background = window.scrollY > 50 ? 'rgba(20,20,20,0.98)' : 'transparent'; };
+        init();
+    </script>
+
+    <!-- NEW ADD-ON SCRIPT: Bollywood Hits Genre -->
+    <script>
+        (async function addBollywoodRow() {
+            // Using existing variables from above script
+            const BOLLY_URL = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&with_original_language=hi&sort_by=vote_count.desc&vote_average.gte=6`;
+            const container = document.getElementById('genre-rows');
+            
+            try {
+                const res = await fetch(BOLLY_URL);
+                const data = await res.json();
+                
+                const row = document.createElement('div');
+                row.className = 'row';
+                row.innerHTML = `<div class="row-title">Bollywood Hits</div><div class="slider"></div>`;
+                const slider = row.querySelector('.slider');
+
+                data.results.forEach((item) => {
+                    if (item.backdrop_path) {
+                        const card = document.createElement('div');
+                        card.className = 'card';
+                        card.innerHTML = `
+                            <img src="${IMG_URL + item.backdrop_path}">
+                            <div class="card-name">${item.title || item.name}</div>
+                        `;
+                        card.onclick = () => { 
+                            if(typeof carouselInterval !== 'undefined') clearInterval(carouselInterval); 
+                            updateHero(item.id, 'movie'); 
+                            window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                        };
+                        slider.appendChild(card);
+                    }
+                });
+                container.appendChild(row);
+            } catch (err) {
+                console.error("Bollywood row failed to load", err);
+            }
+        })();
+    </script>
+</body>
+</html>
